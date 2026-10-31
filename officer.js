@@ -1,0 +1,34 @@
+const $=id=>document.getElementById(id),nm=id=>(SITES.find(s=>s.id==id)||{}).name,NM=LVL.en;
+const map=L.map("map").setView([19.6,76.5],6);L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"© OpenStreetMap"}).addTo(map);
+const layer=L.layerGroup().addTo(map);let DATA=[],HOT=[],ROWS=[];
+const ago=t=>{const h=Math.round((Date.now()-t)/36e5);return h<24?h+" h ago":Math.round(h/24)+" d ago"};
+const SB={Followed:"green",Partly:"yellow",Missed:"red"},lvl=x=>+$("when").value?x.tm:x.lv;
+[...new Set(SITES.map(s=>s.district))].forEach(d=>$("dist").add(new Option(d,d)));
+(async()=>{const cm=allComplaints(),logs=allLogs();
+ DATA=await Promise.all(SITES.map(async s=>{let lv="n/a",why="No weather data",tm="n/a",w=null;
+  try{w=await getWeather(s)}catch(e){}const n=new Date().getHours();try{const a=siteLevel(s,w,n,0);lv=a.level;why=a.why}catch(e){}try{tm=siteLevel(s,w,n,1).level}catch(e){}
+  const miss=[0,1,2].filter(d=>{const k=new Date(day(d)).toDateString();return!logs.some(l=>l.site==s.id&&new Date(l.ts).toDateString()===k&&l.water&&l.shade)}).length;
+  return{s,lv,why,tm,st:siteStats(s.id),miss,nc:cm.filter(x=>x.site==s.id).length}}));
+ $("upd").textContent="Updated "+new Date().toLocaleTimeString();draw();
+ const ic=allIncidents();
+ $("cl").innerHTML=[...cm].sort((a,b)=>b.ts-a.ts).map(x=>`<li><b>${nm(x.site)}</b>: ${x.type} <small>${ago(x.ts)}</small></li>`).join("")||"<li>None</li>";
+ $("il").innerHTML=[...ic].sort((a,b)=>b.ts-a.ts).map(x=>`<li><b>${nm(x.site)}</b>: ${x.severe?"severe, 108 advised":"mild"} <small>${ago(x.ts)}</small></li>`).join("")||"<li>None logged yet. Workers log cases in the Help tab.</li>";
+ $("t4").textContent=cm.length;$("t5").textContent=ic.length})();
+const score=x=>(RK[x.lv]||0)*3+(x.st.status==="Missed"?3:x.st.status==="Partly"?1:0)+x.nc;
+const badge=(l,t)=>`<span class="badge s ${l}" ${t?`title="${t}"`:""}>${NM[l]||"No data"}</span>`;
+function draw(){const IN=get("hs_insp"),last=id=>{const a=IN.filter(i=>i.site==id).sort((p,q)=>q.ts-p.ts)[0];return a?ago(a.ts):"never"};const d=$("dist").value,D=DATA.filter(x=>!d||x.s.district===d);layer.clearLayers();HOT=[];ROWS=[];
+ D.forEach(x=>{const lv=lvl(x);if(RK[lv]>=2)HOT.push([x.s.name,lv]);
+  L.circleMarker([x.s.lat,x.s.lon],{radius:15,color:"#10243a",weight:1,fillColor:COL[lv]||"#888",fillOpacity:.9}).addTo(layer).bindPopup(`<b>${x.s.name}</b><br>${+$("when").value?"Tomorrow":"Today"}: ${NM[lv]||"No data"}<br>IMD: ${NM[x.s.imd]}<br>Break today: ${x.st.status}<br>Complaints: ${x.nc}`)});
+ if(D.length)map.fitBounds(D.map(x=>[x.s.lat,x.s.lon]),{maxZoom:8,padding:[40,40]});
+ $("t1").textContent=HOT.length;$("t2").textContent=D.filter(x=>x.st.status==="Followed").length;$("t3").textContent=D.filter(x=>x.st.status!=="Followed").length;
+ const q=[...D].sort((a,b)=>score(b)-score(a)).slice(0,3);
+ $("pq").innerHTML=q.map(x=>`<li><b>${x.s.name}</b>, ${NM[x.lv]||"no data"}, break ${x.st.status.toLowerCase()}, ${x.nc} complaints</li>`).join("");
+ $("rp").innerHTML=D.filter(x=>x.miss>=2).map(x=>`<li><b>${x.s.name}</b>: ${x.miss} of last 3 days without a full break record</li>`).join("")||"<li>None</li>";
+ $("rows").innerHTML=D.map(x=>{ROWS.push([x.s.name,x.s.district,NM[x.s.imd],NM[x.lv]||"n/a",x.st.status,x.st.stars,x.nc,x.st.pay]);
+  return`<tr><td><b>${x.s.name}</b><br><small>${x.s.district}. Inspected: ${last(x.s.id)}</small></td><td>IMD ${badge(x.s.imd)}<br>Site ${badge(x.lv,x.why)} Tomorrow ${badge(x.tm)}${RK[x.lv]>RK[x.s.imd]?"<br><small>▲ worse than district alert</small>":""}</td><td><span class="badge s ${SB[x.st.status]}">${x.st.status}</span></td><td>${x.st.stars?"★".repeat(x.st.stars)+"☆".repeat(5-x.st.stars):"No data"}</td><td>${x.nc}</td><td>Rs ${x.st.pay.toLocaleString("en-IN")}</td><td><button class="sm alt" data-i="${x.s.id}">Mark inspected</button> ${x.st.status==="Missed"?`<button class="sm" data-n="${x.s.name}">Copy notice</button>`:""}</td></tr>`}).join("")}
+$("dist").onchange=$("when").onchange=draw;$("dm").checked=DEMO();$("dm").onchange=()=>{localStorage.hs_demo=$("dm").checked?"1":"0";location.reload()};
+$("rows").onclick=e=>{const i=e.target.dataset.i;if(i){put("hs_insp",{site:i,ts:Date.now()});return draw()}const n=e.target.dataset.n;if(n){navigator.clipboard.writeText(`Notice: no heat-break record received today for ${n}. Please follow the 12-4 PM SOP break on orange and red alert days and submit proof.`);e.target.textContent="Copied"}};
+$("csv").onclick=()=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["Site,District,IMD alert,Site risk,Break today,Stars,Complaints,Simulated pay (Rs)\n"+ROWS.map(r=>r.join(",")).join("\n")],{type:"text/csv"}));a.download="heatsetu-compliance.csv";a.click()};
+$("pr").onclick=()=>window.print();
+$("bc").onclick=()=>{$("bo").hidden=false;$("bo").textContent=HOT.length?HOT.map(h=>alertText(h[0],h[1],"mr")).join("\n\n"):"No site at high risk now."};
+$("reset").onclick=()=>{["hs_logs","hs_c","hs_i","hs_insp"].forEach(k=>localStorage.removeItem(k));location.reload()};

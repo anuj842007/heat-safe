@@ -1,0 +1,19 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>HeatSetu: heat safety for outdoor workers</title>
+<link href="https://fonts.googleapis.com/css2?family=Hind:wght@400;600;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="style.css"></head><body>
+<header><b>HeatSetu</b><span>उष्मा सेतू</span><span class="sp"></span><a href="worker.html">Worker app</a><a href="officer.html">Officer dashboard</a></header>
+<main>
+<div class="card hero"><h1>Maharashtra has a heat rule. HeatSetu shows who follows it.</h1>
+<p>The state SOP moves outdoor work to 6–11 AM and 4–8 PM and stops it from 12 to 4 PM on orange and red alert days. Workers who rest lose a day's pay, and officers cannot see which sites comply. HeatSetu gives each site its own risk, gives workers a safe way to rest, and gives officers proof.</p>
+<div class="doors"><a class="door" href="worker.html"><h2>I am a worker or supervisor</h2><p>Risk for my site, map, alerts, voice in Marathi, water and rest timers, 108 help, report a problem, record a break.</p></a>
+<a class="door o" href="officer.html"><h2>I am an officer</h2><p>Risk map, compliance, repeat offenders, complaints, Heat-Safe ratings, pay ledger, notices and reports.</p></a></div>
+<div class="legend"><span><i class="green"></i>Low risk: work as normal</span><span><i class="yellow"></i>Moderate: water every 30 min</span><span><i class="orange"></i>High: 45 min work, 15 rest, 12–4 break</span><span><i class="red"></i>Extreme: stop work</span></div></div>
+<div class="card wrap"><h3>Alerts only vs HeatSetu</h3><table><tr><th></th><th>Alert-only tools</th><th>HeatSetu</th></tr>
+<tr><td>Area</td><td>Whole district</td><td>Each work site</td></tr><tr><td>Humidity and sun</td><td>Often ignored</td><td>Included, with the reason shown</td></tr>
+<tr><td>Proof of rest</td><td>None</td><td>Time, GPS, headcount, water, shade, photo</td></tr><tr><td>Worker pay</td><td>Lost when resting</td><td>Heat-break ledger (simulated)</td></tr>
+<tr><td>Language</td><td>Mostly English text</td><td>Marathi, Hindi, English, voice, printed board</td></tr><tr><td>Officer view</td><td>None</td><td>Map, ratings, notices, reports</td></tr></table></div>
+<div class="card"><h3>What this borrows</h3><div class="grid">
+<div><b>OSHA-NIOSH Heat Safety Tool</b><br><small>An hourly risk plan with precautions and symptoms close at hand. We add Marathi and proof from the site.</small></div>
+<div><b>CDC HeatRisk map</b><br><small>A colour map from low to extreme risk. Our officer map does the same with four levels.</small></div>
+<div><b>Maharashtra SOP, April 2026</b><br><small>The 6–11 AM and 4–8 PM work windows and the 12–4 PM break sit inside every timetable. Hours are taken from news reports of the SOP.</small></div>
+<div><b>Water and shade points</b><br><small>Workers can see where to drink and rest. The points shown are sample data.</small></div></div></div>
+<p><small>Prototype. Live weather comes from Open-Meteo. IMD district alerts, site records, complaints, water points and pay are sample data, and pay is simulated. Risk levels use our own demo cutoffs; for a pilot they would be set with the state disaster management authority.</small></p></main></body></html>
