@@ -37,3 +37,8 @@ function dayRisk(w,it,sh,off){let b={level:"green",eff:-99};for(let h=6;h<=19;h+
 function siteLevel(s,w,n,when,it="medium",sh=false){if(DEMO())return{level:when?s.demoT:s.demo,why:"Demo colour (sample data)"};
  if(when){const b=dayRisk(w,it,sh,24);return b?{level:b.level,why:"Tomorrow peak "+b.t+"°C around "+b.h+":00"}:{level:"n/a",why:"No forecast"}}
  const r=riskLevel(w.t[n],w.h[n],it,sh);return{level:r.level,why:r.why}}
+
+const AT={brk:{mr:"दुपारी १२ ते ४ विश्रांतीची वेळ. काम थांबवा, सावलीत बसा, पाणी प्या.",hi:"दोपहर 12 से 4 आराम का समय। काम रोकें, छाँव में बैठें, पानी पिएं।",en:"12-4 PM break time. Stop work, sit in shade, drink water."},
+res:{mr:"विश्रांती संपली. काळजीपूर्वक काम सुरू करा, पाणी पीत रहा.",hi:"आराम खत्म। सावधानी से काम शुरू करें, पानी पीते रहें।",en:"Break over. Resume work carefully and keep drinking water."},
+wat:{mr:"आत्ता पाणी प्या! प्रत्येकाने एक ग्लास.",hi:"अभी पानी पिएं! सबको एक गिलास।",en:"Drink water now! One glass each."}};
+const ATN={heat:"Heat risk alert",brk:"12-4 PM break starts",res:"Break over, resume work",wat:"Drink water now"};

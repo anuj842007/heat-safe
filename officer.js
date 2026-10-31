@@ -31,4 +31,8 @@ $("rows").onclick=e=>{const i=e.target.dataset.i;if(i){put("hs_insp",{site:i,ts:
 $("csv").onclick=()=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["Site,District,IMD alert,Site risk,Break today,Stars,Complaints,Simulated pay (Rs)\n"+ROWS.map(r=>r.join(",")).join("\n")],{type:"text/csv"}));a.download="heatsetu-compliance.csv";a.click()};
 $("pr").onclick=()=>window.print();
 $("bc").onclick=()=>{$("bo").hidden=false;$("bo").textContent=HOT.length?HOT.map(h=>alertText(h[0],h[1],"mr")).join("\n\n"):"No site at high risk now."};
-$("reset").onclick=()=>{["hs_logs","hs_c","hs_i","hs_insp"].forEach(k=>localStorage.removeItem(k));location.reload()};
+$("reset").onclick=()=>{["hs_logs","hs_c","hs_i","hs_insp","hs_bc"].forEach(k=>localStorage.removeItem(k));location.reload()};
+$("as").add(new Option("All sites","all"));SITES.forEach(s=>$("as").add(new Option(s.name,s.id)));
+$("sa").onclick=()=>{const v=$("as").value,s=SITES.find(x=>x.id==v);put("hs_bc",{id:Date.now(),site:v,name:s?s.name:"All sites",level:$("al").value,type:$("at").value});sl();$("sm").textContent="Alert sent to worker pages open in this browser (demo)."};
+function sl(){const A=get("hs_ack");$("sl").innerHTML=get("hs_bc").slice(-5).reverse().map(b=>{const t=b.type||"heat";return`<li><small>${new Date(b.id).toLocaleTimeString()}</small> <b>${b.name}</b>: ${ATN[t]}${t==="heat"?" ("+NM[b.level]+")":""}, acknowledged ${A.filter(a=>a.bc===b.id).length}</li>`}).join("")||"<li>No alerts sent yet.</li>"}
+sl();setInterval(sl,3e3);

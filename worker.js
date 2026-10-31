@@ -6,7 +6,7 @@ $("lang").value=lang;applyLang(lang);$("lang").onchange=()=>{lang=$("lang").valu
 const tile=()=>L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"© OpenStreetMap"});
 async function load(){const s=SITES.find(x=>x.id==$("site").value);localStorage.hs_site=s.id;$("panel").textContent="…";
  try{const w=await getWeather(s),n=new Date().getHours(),it=$("it").value,sh=$("shade").checked,r=riskLevel(w.t[n],w.h[n],it,sh),old=cur&&cur.s.id==s.id?cur.r.level:null;
-  cur={s,w,n,it,sh,r};render();if(old&&old!==r.level&&RK[r.level]>=2)pushNote()}catch(e){$("panel").textContent=T[lang].err}}
+  cur={s,w,n,it,sh,r};render();autoAlert()}catch(e){$("panel").textContent=T[lang].err}}
 function render(){if(!cur)return;const{s,w,n,r,it,sh}=cur,l=r.level,tb=dayRisk(w,it,sh,24);
  $("panel").innerHTML=`<div class="lvl ${l}">${LVL[lang][l]}</div><div class="scale">${["green","yellow","orange","red"].map(c=>`<i class="${c}${c===l?" on":""}"></i>`).join("")}</div><p class="msg">${MSG[lang][l]}</p>
 <p>${w.t[n]}°C, ${w.h[n]}% humidity, feels like ${r.eff}°C ${w.cached?"(saved data, offline)":""}</p>
@@ -47,3 +47,26 @@ $("log").onclick=()=>{const s=SITES.find(x=>x.id==$("site").value),r={site:s.id,
 $("print").onclick=()=>{document.body.classList.add("pb");$("board").style.display="block";window.print();$("board").style.display="none";document.body.classList.remove("pb")};
 $("bds").onclick=()=>timer("bd",3600,{mr:"सोबत्याला विचारा: चक्कर आहे का? पाणी प्या.",hi:"साथी से पूछें: चक्कर तो नहीं? पानी पिएं।",en:"Check your partner: dizzy? Drink water."}[lang],1);
 $("sos").onclick=()=>{const n=SITES.find(x=>x.id==$("site").value).name,go=p=>window.open("https://wa.me/?text="+encodeURIComponent("Heat emergency. I need help at "+n+"."+(p?" https://maps.google.com/?q="+p.coords.latitude+","+p.coords.longitude:"")),"_blank");navigator.geolocation?navigator.geolocation.getCurrentPosition(go,()=>go(null)):go(null)};
+
+const ON="Alerts on ✓",seen={},TL={brk:"orange",res:"green",wat:"yellow"};let cx=null,VO=[],lr=0;
+if(localStorage.hs_n)$("nt").textContent=ON;
+if("speechSynthesis"in window){const gv=()=>{VO=speechSynthesis.getVoices()};gv();speechSynthesis.onvoiceschanged=gv}
+document.addEventListener("pointerdown",()=>{try{cx=cx||new AudioContext();cx.resume()}catch(e){}},{once:true});
+function beep(c){try{cx=cx||new AudioContext();cx.resume();const n=c==="red"?8:c==="orange"?4:2;for(let i=0;i<n;i++){const o=cx.createOscillator(),g=cx.createGain(),t=cx.currentTime+i*.3;o.type="square";o.frequency.value=i%2?660:880;g.gain.value=.15;o.connect(g);g.connect(cx.destination);o.start(t);o.stop(t+.25)}}catch(e){}}
+function speak(t){if(!("speechSynthesis"in window))return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t),w=T[lang].vc.slice(0,2),f=p=>VO.find(x=>x.lang.replace("_","-").toLowerCase().startsWith(p));let v=f(w);const miss=w==="mr"&&!v;if(miss)v=f("hi");u.lang=v?v.lang:T[lang].vc;if(v)u.voice=v;u.rate=.9;speechSynthesis.speak(u);$("vn").textContent=miss?"Marathi voice not found on this device, so Hindi voice is used. Add Marathi in the phone's text-to-speech settings.":""}
+function renderAH(){$("ah").innerHTML=get("hs_ah").slice(-5).reverse().map(a=>`<li><small>${new Date(a.ts).toLocaleTimeString()}</small> <b>${a.t}</b>: ${a.m}</li>`).join("")||"<li>None yet</li>"}renderAH();
+function fire(title,l,pre,type,id){type=type||"heat";const c=TL[type]||l,m=(pre||"")+(type==="heat"?LVL[lang][l]+". "+MSG[lang][l]:AT[type][lang]);
+ $("ab").className="ab "+c;$("ab").hidden=false;$("ab").dataset.id=id||"";$("abt").textContent=title;$("abm").textContent=m;put("hs_ah",{ts:Date.now(),t:title,m});renderAH();
+ if(localStorage.hs_n){beep(c);speak(m);navigator.vibrate&&navigator.vibrate([300,150,300,150,300]);if("Notification"in window&&Notification.permission==="granted")try{new Notification(title,{body:m})}catch(e){}}}
+function autoAlert(){if(!cur)return;const l=cur.r.level,k=cur.s.id;if(RK[l]>=2&&seen[k]!==l)fire("HeatSetu alert: "+cur.s.name,l);seen[k]=l}
+$("say").onclick=()=>{if(cur)speak(LVL[lang][cur.r.level]+". "+MSG[lang][cur.r.level])};
+$("abv").onclick=()=>speak($("abm").textContent);
+$("abx").onclick=()=>{const id=$("ab").dataset.id;if(id)put("hs_ack",{bc:+id,site:$("site").value,ts:Date.now()});$("ab").hidden=true;"speechSynthesis"in window&&speechSynthesis.cancel()};
+$("nt").onclick=async()=>{localStorage.hs_n=1;$("nt").textContent=ON;if("Notification"in window)try{await Notification.requestPermission()}catch(e){}beep("orange");speak({mr:"सूचना चालू झाल्या.",hi:"सूचनाएं चालू हो गईं।",en:"Alerts are on."}[lang])};
+$("ta").onclick=()=>{if(!localStorage.hs_n){localStorage.hs_n=1;$("nt").textContent=ON;try{Notification.requestPermission()}catch(e){}}fire("Test alert: "+$("site").selectedOptions[0].text,"red")};
+setInterval(()=>{if(!cur)return;const t=new Date(),m=t.getHours()*60+t.getMinutes(),d=t.toDateString(),L=cur.r.level;
+ if((m===705||m===720)&&RK[L]>=2&&!localStorage["hs_br"+d+m]){localStorage["hs_br"+d+m]=1;m===705?fire("HeatSetu: break soon",L,{mr:"१५ मिनिटांत विश्रांती सुरू. ",hi:"15 मिनट में आराम शुरू। ",en:"Break starts in 15 minutes. "}[lang]):fire("HeatSetu: 12-4 PM break",L,"","brk")}
+ const tb=dayRisk(cur.w,cur.it,cur.sh,24);if(t.getHours()===17&&tb&&RK[tb.level]>=2&&!localStorage["hs_tm"+d]){localStorage["hs_tm"+d]=1;fire("HeatSetu: tomorrow",tb.level,{mr:"उद्या: ",hi:"कल: ",en:"Tomorrow: "}[lang])}
+ if(m%10===0&&lr!==m&&localStorage.hs_n&&!$("ab").hidden&&$("ab").className.includes("red")){lr=m;beep("red");speak($("abm").textContent)}},3e4);
+function checkBc(){const a=get("hs_bc"),s=+localStorage.hs_bcs||0;a.filter(b=>b.id>s&&Date.now()-b.id<6e5&&(b.site==="all"||b.site==$("site").value)).forEach(b=>fire("Officer alert: "+b.name,b.level,"",b.type,b.id));if(a.length)localStorage.hs_bcs=Math.max(...a.map(b=>b.id))}
+setInterval(checkBc,4e3);addEventListener("storage",checkBc);checkBc();
